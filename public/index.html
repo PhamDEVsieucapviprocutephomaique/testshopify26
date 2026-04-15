@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Flash Sale</title>
+  </head>
+  <body>
+    <div id="app">Loading...</div>
+
+    <script>
+      async function load() {
+        const { active } = await fetch("/api/flash-time").then((r) => r.json());
+        if (!active) {
+          document.getElementById("app").innerHTML = "<h2>No product</h2>";
+          return;
+        }
+
+        const { available } = await fetch("/api/stock").then((r) => r.json());
+
+        document.getElementById("app").innerHTML = `
+        <h2>iPhone 15</h2>
+        <p>Giá: 1000 USD</p>
+        <input id="phone" maxlength="20" placeholder="Số điện thoại" />
+        <div id="btn">
+          ${
+            available
+              ? `<button onclick="order()">Add to Cart</button>`
+              : `<button disabled>Out of Stock</button>`
+          }
+        </div>
+        <p id="msg"></p>
+      `;
+      }
+
+      async function order() {
+        const phone = document.getElementById("phone").value;
+        const data = await fetch("/api/order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone }),
+        }).then((r) => r.json());
+
+        const msg = document.getElementById("msg");
+        if (data.success) {
+          msg.style.color = "green";
+          msg.textContent = "Đặt hàng thành công!";
+          const { available } = await fetch("/api/stock").then((r) => r.json());
+          if (!available)
+            document.getElementById("btn").innerHTML =
+              `<button disabled>Out of Stock</button>`;
+        } else {
+          msg.style.color = "red";
+          msg.textContent = data.error;
+        }
+      }
+
+      load();
+    </script>
+  </body>
+</html>
